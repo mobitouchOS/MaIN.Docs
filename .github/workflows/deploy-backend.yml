@@ -73,6 +73,3 @@ jobs:
           resourceGroup: MaIN
           containerAppName: maindoc-backend
           imageToDeploy: ${{ needs.build-push.outputs.image_tag }}
-          registryUrl: ghcr.io
-          registryUsername: ${{ github.actor }}
-          registryPassword: ${{ secrets.GHCR_PAT }}
