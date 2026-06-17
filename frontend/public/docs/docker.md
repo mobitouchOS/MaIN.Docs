@@ -24,7 +24,7 @@ It is **genuinely multiplatform**:
 docker run -d \
   -p 5555:5555 \
   -v ~/models:/app/Models \
-  ghcr.io/wisedev-code/main-inferpage:cpu
+  ghcr.io/mobitouchos/main-inferpage:cpu
 ```
 
 Open `http://localhost:5555` — done.
@@ -36,7 +36,7 @@ docker run -d \
   --gpus all \
   -p 5555:5555 \
   -v ~/models:/app/Models \
-  ghcr.io/wisedev-code/main-inferpage:cuda
+  ghcr.io/mobitouchos/main-inferpage:cuda
 ```
 
 The `:cuda` image is based on `nvidia/cuda:12.9.1-runtime-ubuntu24.04` and automatically enables all visible GPUs. Make sure the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) is installed.
@@ -49,7 +49,7 @@ If you already have Ollama running locally, skip the model volume entirely:
 docker run -d \
   -p 5555:5555 \
   -e MaIN__OllamaBaseUrl=http://host.docker.internal:11434 \
-  ghcr.io/wisedev-code/main-inferpage:ollama
+  ghcr.io/mobitouchos/main-inferpage:ollama
 ```
 
 ### Bundled Ollama (zero dependencies)
@@ -58,7 +58,7 @@ docker run -d \
 docker run -d \
   -p 5555:5555 \
   -v ollama-data:/root/.ollama \
-  ghcr.io/wisedev-code/main-inferpage:ollama-bundled
+  ghcr.io/mobitouchos/main-inferpage:ollama-bundled
 ```
 
 Ollama starts automatically inside the container. Pull models through the UI or via `docker exec`.
@@ -68,7 +68,7 @@ Ollama starts automatically inside the container. Pull models through the UI or 
 ```yaml
 services:
   inferpage:
-    image: ghcr.io/wisedev-code/main-inferpage:cpu
+    image: ghcr.io/mobitouchos/main-inferpage:cpu
     ports:
       - "5555:5555"
     volumes:
@@ -118,7 +118,7 @@ docker run -d \
   -p 5555:5555 \
   -e MaIN__BackendType=2 \
   -e MaIN__GeminiKey=your-key \
-  ghcr.io/wisedev-code/main-inferpage:cpu
+  ghcr.io/mobitouchos/main-inferpage:cpu
 ```
 
 Backend type values: `0` = Self (local), `1` = OpenAI, `2` = Gemini, `3` = Anthropic, `4` = GroqCloud, `7` = Ollama.

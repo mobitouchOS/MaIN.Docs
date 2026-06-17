@@ -1,6 +1,6 @@
 # Docker — MaIN.NET InferPage
 
-MaIN.NET ships a ready-to-run Docker image called **InferPage** (`ghcr.io/wisedev-code/main-inferpage`). It is a Blazor Server web app that wraps MaIN.NET and exposes a browser-based chat UI on **port 5555**. Zero code required — pull, run, chat.
+MaIN.NET ships a ready-to-run Docker image called **InferPage** (`ghcr.io/mobitouchos/main-inferpage`). It is a Blazor Server web app that wraps MaIN.NET and exposes a browser-based chat UI on **port 5555**. Zero code required — pull, run, chat.
 
 InferPage is genuinely multiplatform. The same repo produces four image tags targeting different hardware:
 
@@ -40,7 +40,7 @@ InferPage is genuinely multiplatform. The same repo produces four image tags tar
 docker run -d \
   -p 5555:5555 \
   -v ~/models:/app/Models \
-  ghcr.io/wisedev-code/main-inferpage:cpu
+  ghcr.io/mobitouchos/main-inferpage:cpu
 ```
 
 ### Windows / Linux with NVIDIA GPU
@@ -52,7 +52,7 @@ docker run -d \
   --gpus all \
   -p 5555:5555 \
   -v ~/models:/app/Models \
-  ghcr.io/wisedev-code/main-inferpage:cuda
+  ghcr.io/mobitouchos/main-inferpage:cuda
 ```
 
 ### External Ollama (Ollama already running on the host)
@@ -60,7 +60,7 @@ docker run -d \
 ```bash
 docker run -d \
   -p 5555:5555 \
-  ghcr.io/wisedev-code/main-inferpage:ollama
+  ghcr.io/mobitouchos/main-inferpage:ollama
 ```
 
 The `:ollama` image defaults `MaIN__OllamaBaseUrl` to `http://host.docker.internal:11434`. Override this to point at a remote Ollama.
@@ -71,7 +71,7 @@ The `:ollama` image defaults `MaIN__OllamaBaseUrl` to `http://host.docker.intern
 docker run -d \
   -p 5555:5555 \
   -v ollama-data:/root/.ollama \
-  ghcr.io/wisedev-code/main-inferpage:ollama-bundled
+  ghcr.io/mobitouchos/main-inferpage:ollama-bundled
 ```
 
 The entrypoint script starts Ollama first, then InferPage. Pull models via `docker exec <id> ollama pull gemma3:4b` or from the UI.
@@ -83,7 +83,7 @@ The entrypoint script starts Ollama first, then InferPage. Pull models via `dock
 ```yaml
 services:
   inferpage:
-    image: ghcr.io/wisedev-code/main-inferpage:cpu
+    image: ghcr.io/mobitouchos/main-inferpage:cpu
     ports:
       - "5555:5555"
     volumes:
@@ -96,7 +96,7 @@ services:
 ```yaml
 services:
   inferpage:
-    image: ghcr.io/wisedev-code/main-inferpage:cuda
+    image: ghcr.io/mobitouchos/main-inferpage:cuda
     ports:
       - "5555:5555"
     volumes:
@@ -116,7 +116,7 @@ services:
 ```yaml
 services:
   inferpage:
-    image: ghcr.io/wisedev-code/main-inferpage:cpu
+    image: ghcr.io/mobitouchos/main-inferpage:cpu
     ports:
       - "5555:5555"
     environment:

@@ -53,7 +53,7 @@ public class GitHubService(HttpClient http, IConfiguration config, ILogger<GitHu
 {
     private static readonly JsonSerializerOptions JsonOpts = new() { PropertyNameCaseInsensitive = true };
 
-    private string Repo => config["GITHUB_REPO"] ?? "wisedev-code/MaIN.NET";
+    private string Repo => config["GITHUB_REPO"] ?? "mobitouchOS/MaIN.NET";
 
     public async Task<List<GitHubIssue>> ListIssuesAsync(string? label = null)
     {
