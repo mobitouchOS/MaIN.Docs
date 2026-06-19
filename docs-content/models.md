@@ -15,7 +15,9 @@ All supported models are available as compile-time constants in the `Models` nam
 | `Models.Local.DeepSeekR1_1_5b` | DeepSeek-R1 1.5B — reasoning/CoT model |
 | `Models.Local.Qwen2_5_0_5b` | Qwen 2.5 0.5B — ultra-small, edge deployment |
 | `Models.Local.Llava16Mistral_7b` | LLaVA 1.6 Mistral 7B — vision model (image input) |
-| `Models.Local.Flux1Shnell` | FLUX.1 Schnell — local image generation |
+| `Models.Local.StableDiffusion1_5` | Stable Diffusion 1.5 — local image generation (512×512, CPU-friendly) |
+| `Models.Local.Flux1Shnell` | FLUX.1 Schnell — local image generation (768×768, balanced quality) |
+| `Models.Local.QwenImage` | Qwen Image — local image generation (1024×1024, highest quality) |
 | `Models.Local.Kokoro82m` | Kokoro 82M — local text-to-speech |
 
 **Adding a custom GGUF model** (not in the built-in catalogue):
@@ -39,8 +41,14 @@ await AIHub.Chat()
 - LLamaSharp is already a dependency of `MaIN.NET` — do NOT add it separately
 - Models are downloaded to `ModelsPath` (config key) or the `MaIN_ModelsPath` env variable
 - `EnsureModelDownloaded()` auto-downloads before first use; `EnsureDownloadedAsync` supports progress reporting
-- `LocalInferenceParams` controls temperature, grammar, top-p, max tokens for local models
+- `LocalInferenceParams` controls temperature, grammar, top-p, max tokens for local text models
 - Context size is set via `WithMemoryParams(new MemoryParams { ContextSize = 4096 })`
+
+**Local image generation (diffusion models):**
+- `StableDiffusion1_5`, `Flux1Shnell`, and `QwenImage` run in-process via `StableDiffusion.NET` — no external service or `ImageGenUrl` needed
+- Register the model class first: `ModelRegistry.RegisterOrReplace(new Flux1Shnell())`
+- `EnsureDownloadedAsync` handles all required assets (VAE, CLIP, T5-XXL) automatically
+- See [image-generation.md](image-generation.md) for full examples
 
 ---
 

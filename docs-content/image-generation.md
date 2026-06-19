@@ -12,7 +12,7 @@ MaIN.NET supports AI image generation through the same `ChatContext` API used fo
 | Gemini | Imagen 4.0 Fast, Gemini 2.5 Flash Image | `GeminiKey` |
 | xAI (Grok) | Grok Image, Grok Imagine, Grok Imagine Pro | `XaiKey` |
 | Vertex AI | Imagen 4.0, Veo 2.0 | `GoogleServiceAccountAuth` |
-| Local (FLUX) | FLUX.1 Schnell | `ImageGenUrl` pointing to local service |
+| Local (Self) | Stable Diffusion 1.5, FLUX.1 Schnell, Qwen Image | None — runs in-process via GGUF |
 
 **Not supported:** Anthropic, DeepSeek, GroqCloud, Ollama.
 
@@ -55,8 +55,10 @@ Models.Xai.GrokImagineImagePro // "grok-imagine-image-pro"
 Models.Vertex.Imagen4_0_Generate   // "google/imagen-4.0-generate-001"
 Models.Vertex.Veo2_0_Generate      // "google/veo-2.0-generate-001"
 
-// Local
-Models.Local.Flux1Shnell       // "FLUX.1_Shnell" (runs via local ImageGen service)
+// Local (in-process, no external service required)
+Models.Local.StableDiffusion1_5   // "stable-diffusion-1.5" — 512×512, SD1, CPU-friendly
+Models.Local.Flux1Shnell          // "FLUX.1_Shnell"        — 768×768, FLUX, good quality
+Models.Local.QwenImage            // "qwen-image"           — 1024×1024, highest quality
 ```
 
 ---
@@ -192,51 +194,62 @@ public class ChatWithImageGenVertexExample : IExample
 }
 ```
 
-### Local FLUX.1 Schnell
+### Local — in-process diffusion (no external service)
 
-FLUX.1 runs via a separate local image generation service. Start that service first, then point `ImageGenUrl` at it.
+Local image generation runs entirely in-process via `StableDiffusion.NET` (stable-diffusion.cpp). No separate service, no `ImageGenUrl` — just register the model, download it once, and generate.
+
+**Stable Diffusion 1.5** — fastest, single-file GGUF, great for CPU or low-VRAM machines:
 
 ```csharp
-using MaIN.Core;
 using MaIN.Core.Hub;
-using MaIN.Domain.Configuration;
 using MaIN.Domain.Models;
 using MaIN.Domain.Models.Concrete;
 using MaIN.Services.Registry;
 
-namespace Examples.Chat;
+ModelRegistry.RegisterOrReplace(new StableDiffusion1_5());
+await AIHub.Model().EnsureDownloadedAsync(Models.Local.StableDiffusion1_5);
 
-public class ChatWithImageGenExample : IExample
-{
-    public async Task Start()
-    {
-        // Only needed if not already set in appsettings.json:
-        MaINBootstrapper.Initialize(options =>
-        {
-            options.ImageGenUrl = "http://localhost:5003";
-        });
+var result = await AIHub.Chat()
+    .WithModel(Models.Local.StableDiffusion1_5)
+    .WithMessage("Fluffy cat with a book - anime style")
+    .CompleteAsync();
 
-        // Register the local model (required once at startup)
-        ModelRegistry.RegisterOrReplace(new GenericLocalModel(Models.Local.Flux1Shnell));
-
-        var result = await AIHub.Chat()
-            .WithModel(Models.Local.Flux1Shnell)
-            .WithMessage("Cyberpunk godzilla cat warrior")
-            .CompleteAsync();
-
-        await File.WriteAllBytesAsync("output.png", result.Message.Image!);
-    }
-}
+await File.WriteAllBytesAsync("output.png", result.Message.Image!);
 ```
 
-`ImageGenUrl` can also be set in `appsettings.json`:
-```json
-{
-  "MaIN": {
-    "ImageGenUrl": "http://localhost:5003"
-  }
-}
+**FLUX.1 Schnell** — better quality, downloads additional VAE + text-encoder assets automatically:
+
+```csharp
+ModelRegistry.RegisterOrReplace(new Flux1Shnell());
+await AIHub.Model().EnsureDownloadedAsync(Models.Local.Flux1Shnell);
+
+var result = await AIHub.Chat()
+    .WithModel(Models.Local.Flux1Shnell)
+    .WithMessage("Cyberpunk godzilla cat warrior")
+    .CompleteAsync();
+
+await File.WriteAllBytesAsync("output.png", result.Message.Image!);
 ```
+
+**Qwen Image** — highest quality (1024×1024), requires significant RAM/VRAM, downloads a large Qwen2.5-VL text encoder:
+
+```csharp
+ModelRegistry.RegisterOrReplace(new QwenImage());
+await AIHub.Model().EnsureDownloadedAsync(Models.Local.QwenImage);
+
+var result = await AIHub.Chat()
+    .WithModel(Models.Local.QwenImage)
+    .WithMessage("A photorealistic mountain lake at dawn")
+    .CompleteAsync();
+
+await File.WriteAllBytesAsync("output.png", result.Message.Image!);
+```
+
+**Key facts about local diffusion:**
+- `EnsureDownloadedAsync` downloads all required assets (VAE, CLIP, T5-XXL, etc.) automatically — you don't manage them separately
+- Models are loaded once and cached in memory for the lifetime of the process
+- `ModelsPath` config (or `MaIN_ModelsPath` env var) controls where GGUF files are stored
+- No `ImageGenUrl` or external service needed
 
 ---
 
@@ -245,6 +258,7 @@ public class ChatWithImageGenExample : IExample
 If you need to use a model ID not in the `Models.*` constants, register it at runtime:
 
 ```csharp
+using MaIN.Domain.Models.Abstract;
 using MaIN.Domain.Models.Concrete;
 using MaIN.Services.Registry;
 
@@ -252,9 +266,34 @@ using MaIN.Services.Registry;
 var model = new GenericImageGenerationCloudModel("my-model-id", BackendType.Gemini);
 ModelRegistry.RegisterOrReplace(model);
 
-// Local image generation model:
-var localModel = new GenericLocalModel("my-local-flux-variant");
+// Local in-process diffusion model (GGUF via stable-diffusion.cpp):
+var localModel = new GenericLocalImageGenerationModel(
+    FileName: "my-sd-model-Q8_0.gguf",
+    Architecture: DiffusionArchitecture.SD1,
+    Name: "My Custom SD Model",
+    Width: 512,
+    Height: 512,
+    Steps: 25,
+    CfgScale: 7.0f
+);
 ModelRegistry.RegisterOrReplace(localModel);
+```
+
+For FLUX-based custom models that need separate encoder assets:
+```csharp
+var fluxModel = new GenericLocalImageGenerationModel(
+    FileName: "my-flux-model-Q4_0.gguf",
+    Architecture: DiffusionArchitecture.Flux,
+    Name: "My FLUX Model",
+    Width: 768,
+    Height: 768,
+    Steps: 4,
+    CfgScale: 1.0f,
+    Vae:   new ModelAsset("ae.safetensors",            new Uri("https://...")),
+    ClipL: new ModelAsset("clip_l.safetensors",        new Uri("https://...")),
+    T5Xxl: new ModelAsset("t5xxl_fp8_e4m3fn.safetensors", new Uri("https://..."))
+);
+ModelRegistry.RegisterOrReplace(fluxModel);
 ```
 
 ---
