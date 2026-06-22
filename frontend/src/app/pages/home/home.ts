@@ -199,6 +199,7 @@ export class Home implements OnDestroy {
   hoveredAgent = signal<AgentDefinition | null>(null);
   displayedAgent = signal<AgentDefinition>(AGENTS[0]);
   agentGuideOpen = signal(false);
+  privacyOpen    = signal(false);
   guideAgent = signal<AgentDefinition | null>(null);
   messages = signal<ChatMessage[]>([]);
   inputText = signal('');
@@ -323,6 +324,9 @@ export class Home implements OnDestroy {
   }
 
   closeAgentGuide() { this.agentGuideOpen.set(false); }
+
+  openPrivacy()  { this.privacyOpen.set(true); }
+  closePrivacy() { this.privacyOpen.set(false); }
 
   toggleGuideAgent(agent: AgentDefinition) {
     this.guideAgent.set(this.guideAgent()?.id === agent.id ? null : agent);

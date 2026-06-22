@@ -629,7 +629,7 @@
         </div>
       </div>
 
-      <p class="input-hint">MaIN.NET is open source — responses are AI-generated for guidance only.</p>
+      <p class="input-hint">MaIN.NET is open source — responses are AI-generated for guidance only. <button type="button" class="privacy-link" (click)="openPrivacy()">Privacy</button></p>
     </div>
   </div>
 
@@ -740,6 +740,44 @@
               </div>
             </div>
           }
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (privacyOpen()) {
+    <div class="privacy-overlay" (click)="closePrivacy()">
+      <div class="privacy-modal" (click)="$event.stopPropagation()">
+        <div class="privacy-header">
+          <span class="privacy-title">Privacy</span>
+          <button type="button" class="arc-run-modal-close" (click)="closePrivacy()" title="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="privacy-body">
+          <p>This site does not track you. No cookies are set. No analytics run. Here's what actually happens when you use it:</p>
+
+          <div class="privacy-section">
+            <span class="privacy-label">Bot protection</span>
+            <p>Cloudflare Turnstile runs a silent challenge before your first message. It processes your IP address and basic browser signals to distinguish humans from bots. No personal profile is built. <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Cloudflare's privacy policy</a> applies.</p>
+          </div>
+
+          <div class="privacy-section">
+            <span class="privacy-label">Conversations</span>
+            <p>Messages you send are forwarded to an AI model (Gemini by default) to generate responses. Conversation content is not stored on our servers after your session ends. The AI provider's data handling applies to content in transit.</p>
+          </div>
+
+          <div class="privacy-section">
+            <span class="privacy-label">Local storage</span>
+            <p>Your theme preference and recent conversation titles are saved in your browser's local storage. This data never leaves your device.</p>
+          </div>
+
+          <div class="privacy-section">
+            <span class="privacy-label">Logs</span>
+            <p>Standard server logs (timestamps, IP addresses, request paths) are retained for security and debugging. They are not shared or sold.</p>
+          </div>
+
+          <p class="privacy-footer-note">Questions? Open an issue on <a href="https://github.com/mobitouchOS/MaIN.NET" target="_blank" rel="noopener">GitHub</a>.</p>
         </div>
       </div>
     </div>
