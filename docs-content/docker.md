@@ -150,3 +150,128 @@ services:
 ## Accessing the UI
 
 Once the container is running, open `http://localhost:5555` in any browser. On first launch with a fresh models volume, InferPage will prompt you to pick and download a model. Subsequent starts load from the cache immediately.
+
+## Using InferPage as an OpenAI-Compatible API
+
+Every InferPage container also serves an **OpenAI-compatible HTTP API** alongside the chat UI, on the same port (`5555`). This means any existing OpenAI SDK, library, or tool (the official `openai` Python/Node/`.NET` clients, LangChain, LlamaIndex, curl scripts written against `api.openai.com`, etc.) can point at your InferPage container instead and just work — no code changes beyond swapping the base URL.
+
+This works identically no matter which backend InferPage is configured for (`MaIN__BackendType`) — a local GGUF model, Ollama, or a cloud provider like OpenAI/Gemini/Anthropic. InferPage is the client-facing surface; the configured backend does the actual inference behind it.
+
+### Endpoints
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/v1/models` | Lists the single model this InferPage instance is currently serving |
+| `POST` | `/v1/chat/completions` | OpenAI-compatible chat completions — supports streaming, tool calling, and `response_format` |
+| `GET` | `/openapi/v1.json` | Machine-readable OpenAPI 3.1 document for the API above |
+| `GET` | `/scalar/v1` | Interactive API explorer (Scalar) — browse the schema and fire test requests from a browser, no client code needed |
+
+### Authentication (optional)
+
+By default the API requires no authentication — fine for local development or a container only reachable on a private network. To require a bearer token (recommended once the container is reachable from outside your machine), set `MaIN__ApiKey`:
+
+```bash
+docker run -d \
+  -p 5555:5555 \
+  -v ~/models:/app/Models \
+  -e MaIN__ApiKey=your-secret-key \
+  ghcr.io/mobitouchos/main-inferpage:cpu
+```
+
+Callers then must send `Authorization: Bearer your-secret-key`. If `MaIN__ApiKey` is unset, the header is not required and, if sent, is ignored.
+
+### Quick test with curl
+
+Non-streaming:
+
+```bash
+curl http://localhost:5555/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{ "role": "user", "content": "Say hello in one word." }]
+  }'
+```
+
+Streaming (Server-Sent Events, identical wire format to OpenAI's `stream: true`):
+
+```bash
+curl http://localhost:5555/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{ "role": "user", "content": "Count from 1 to 5." }],
+    "stream": true
+  }'
+```
+
+The response is a sequence of `data: {...}` chunks ending in `data: [DONE]`, exactly like `api.openai.com`.
+
+List the active model:
+
+```bash
+curl http://localhost:5555/v1/models
+```
+
+The `model` field in a chat completions request is optional — if omitted, InferPage uses whichever model it was started with. If provided, it must match that model or the request is rejected with a `model_not_found` error, so existing OpenAI client code that always sends a `model` string still works as long as it's the right one.
+
+### Structured output (`response_format`)
+
+`response_format: { "type": "json_object" }` and `response_format: { "type": "json_schema", "json_schema": { ... } }` are both supported, the same as OpenAI's API:
+
+```bash
+curl http://localhost:5555/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{ "role": "user", "content": "Return a JSON object with a \"greeting\" field." }],
+    "response_format": { "type": "json_object" }
+  }'
+```
+
+On backends without native JSON-mode support, InferPage transparently falls back to grammar-constrained generation to enforce the same shape.
+
+### Tool calling
+
+`tools` and `tool_choice` follow the standard OpenAI function-calling shape. InferPage does **not** execute tools itself — like OpenAI's own API, it returns `tool_calls` in the response for your application to execute, then you send the tool's result back as a follow-up message:
+
+```bash
+curl http://localhost:5555/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{ "role": "user", "content": "What is the weather in Paris?" }],
+    "tools": [{
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Gets the current weather for a city",
+        "parameters": {
+          "type": "object",
+          "properties": { "city": { "type": "string" } },
+          "required": ["city"]
+        }
+      }
+    }]
+  }'
+```
+
+A response with `"finish_reason": "tool_calls"` means the model wants to invoke a tool; run it locally and send the result back in a `role: "tool"` message to continue the conversation, the same pattern used against `api.openai.com`.
+
+### Using an official OpenAI SDK client
+
+Because the wire format matches OpenAI's API, you can point the real SDK at InferPage instead of writing raw HTTP calls. For example, in .NET:
+
+```csharp
+using OpenAI;
+using OpenAI.Chat;
+using System.ClientModel;
+
+var options = new OpenAIClientOptions { Endpoint = new Uri("http://localhost:5555/v1") };
+var chatClient = new ChatClient(model: "your-model-name", new ApiKeyCredential("not-needed"), options);
+
+var completion = await chatClient.CompleteChatAsync("Say hello in one word.");
+Console.WriteLine(completion.Value.Content[0].Text);
+```
+
+The same `Endpoint` override pattern applies to the official Python and Node SDKs (`base_url` / `baseURL`), and to any other OpenAI-compatible tooling.
+
+### Exploring the API interactively
+
+Rather than crafting curl commands by hand, open `http://localhost:5555/scalar/v1` in a browser once the container is running. It renders the full request/response schema and lets you send real test requests (including streaming and tool calling) directly from the page — useful for a first look at what the API expects without writing any client code.
