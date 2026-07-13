@@ -122,3 +122,55 @@ docker run -d \
 ```
 
 Backend type values: `0` = Self (local), `1` = OpenAI, `2` = Gemini, `3` = Anthropic, `4` = GroqCloud, `7` = Ollama.
+
+## Using InferPage as an API
+
+InferPage isn't just a chat UI — every container also exposes an **OpenAI-compatible HTTP API** on the same port (`5555`), right next to the browser UI. Point any existing OpenAI client library at it — the official Python, Node, or .NET SDKs, LangChain, or a plain curl script — and it just works, no code rewrite required. This holds regardless of which backend InferPage is running (local GGUF, Ollama, or a cloud provider): InferPage is the client-facing surface, the configured backend does the actual inference.
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /v1/chat/completions` | Chat completions — streaming, tool calling, and `response_format` all supported |
+| `GET /v1/models` | Lists the model this instance is serving |
+| `GET /scalar/v1` | Interactive API explorer — try requests straight from a browser |
+| `GET /openapi/v1.json` | Raw OpenAPI 3.1 schema |
+
+### Try it with curl
+
+```bash
+curl http://localhost:5555/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{ "messages": [{ "role": "user", "content": "Say hello in one word." }] }'
+```
+
+Add `"stream": true` to get the response as Server-Sent Events, chunk by chunk, the same as OpenAI's own streaming API.
+
+### Securing it
+
+By default, no authentication is required — fine for local use. Once the container is reachable from outside your machine, lock it down with an API key:
+
+```bash
+docker run -d \
+  -p 5555:5555 \
+  -e MaIN__ApiKey=your-secret-key \
+  ghcr.io/mobitouchos/main-inferpage:cpu
+```
+
+Clients then send `Authorization: Bearer your-secret-key`.
+
+### Pointing a real SDK at it
+
+```csharp
+using OpenAI;
+using OpenAI.Chat;
+using System.ClientModel;
+
+var options = new OpenAIClientOptions { Endpoint = new Uri("http://localhost:5555/v1") };
+var chatClient = new ChatClient("your-model-name", new ApiKeyCredential("not-needed"), options);
+
+var completion = await chatClient.CompleteChatAsync("Say hello in one word.");
+Console.WriteLine(completion.Value.Content[0].Text);
+```
+
+Python and Node SDKs work the same way via their `base_url` / `baseURL` option. Tool calling follows the standard OpenAI shape too: InferPage returns `tool_calls` for your app to execute, just like `api.openai.com` — it never runs tools itself.
+
+The quickest way to explore all of this without writing any code: open `http://localhost:5555/scalar/v1` in a browser once the container is running.
