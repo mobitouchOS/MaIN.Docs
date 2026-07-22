@@ -2,6 +2,9 @@
 
 `ChatContext` is the fluent builder for single-turn and multi-turn LLM completions. Access it via `AIHub.Chat()`.
 
+> 📋 **Looking for available models?** See the complete [Supported Models](./models.html) catalog — 100+ models including local GGUF, OpenAI, Anthropic, Gemini, and more.  
+> 🚀 **Want HTTP API access?** Check the [InferPage OpenAI API](./inferpage-api.html) for exposing any model via OpenAI-compatible endpoints.
+
 ## Builder Chain
 
 ```
@@ -20,6 +23,22 @@ var result = await AIHub.Chat()
     .EnsureModelDownloaded()
     .WithMessage("Where do hedgehogs go at night?")
     .CompleteAsync(interactive: true);
+```
+
+**Other model examples:**
+
+```csharp
+// Tool-calling optimized local model
+.WithModel(Models.Local.Qwen2_5_7b)
+
+// OpenAI GPT-5.6 frontier model
+.WithModel(Models.OpenAi.Gpt5_6Sol)
+
+// Anthropic Claude Fable 5
+.WithModel(Models.Anthropic.ClaudeFable5)
+
+// Cost-optimized for high-volume workloads
+.WithModel(Models.OpenAi.Gpt5_6Luna)
 ```
 
 ---

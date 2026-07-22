@@ -202,19 +202,24 @@ await AIHub.Chat()
 
 ## Model Constants
 
-Compile-time constants for all supported models, organised by namespace:
+Compile-time constants for all supported models, organised by namespace. For a complete catalog with descriptions, sizes, and tool-calling support, see the [Supported Models](./models.html) reference.
 
-| Namespace | Examples |
+| Namespace | Latest Examples |
 |---|---|
-| `Models.Local` | `Gemma2_2b`, `Gemma3_4b`, `Llama3_2_3b`, `Llama3_1_8b`, `DeepSeekR1_1_5b`, `Qwen2_5_0_5b`, `Flux1Shnell` (image), `Kokoro82m` (TTS) |
-| `Models.OpenAi` | `Gpt4o`, `Gpt4oMini`, `Gpt5`, `Gpt5Nano`, `DallE3` (image) |
-| `Models.Anthropic` | `ClaudeSonnet4_6`, `ClaudeOpus4_7`, `ClaudeHaiku4_5` |
-| `Models.Gemini` | `Gemini2_5Pro`, `Gemini2_5Flash`, `Gemini2_0Flash`, `Imagen4_0` (image) |
-| `Models.Groq` | `Llama4Scout17b`, `Llama3_3_70b`, `GptOss20b` |
+| `Models.Local` | `Gemma2_2b`, `Gemma3_4b`, `Llama3_2_3b`, `Qwen2_5_7b`, `Qwen3_5_4b`, `Nemotron3Nano4b`, `Granite4_1_3b`, `Flux1Shnell` (image), `Kokoro82m` (TTS) |
+| `Models.OpenAi` | `Gpt5_6Sol`, `Gpt5_6Terra`, `Gpt5_6Luna`, `Gpt4o`, `Gpt5Nano`, `DallE3` (image) |
+| `Models.Anthropic` | `ClaudeFable5`, `ClaudeMythos5`, `ClaudeSonnet5`, `ClaudeOpus4_8`, `ClaudeHaiku4_5` |
+| `Models.Gemini` | `Gemini2_5Pro`, `Gemini3_5Flash`, `Imagen4_0` (image) |
+| `Models.Groq` | `Llama4Scout17b`, `Llama3_3_70b`, `GptOss120b` |
 | `Models.DeepSeek` | `Chat`, `Reasoner` |
-| `Models.Xai` | `Grok3Beta`, `Grok4_20Reasoning` |
-| `Models.Ollama` | `Gemma3_4b`, `Llama4` |
+| `Models.Xai` | `Grok4_20Reasoning`, `Grok4_1Fast` |
+| `Models.Ollama` | `OllamaGemma3_4b`, `OllamaLlama4Scout`, `OllamaQwen3_8b` |
 | `Models.Vertex` | `Gemini2_5Pro`, `Gemini2_5Flash`, `Veo2_0`, `Imagen4_0` |
+
+**Quick links:**
+- 📋 [Full model catalog with sizes & capabilities](./models.html)
+- 🚀 [InferPage OpenAI API reference](./inferpage-api.html)
+- 🔧 [Tool-calling optimized models](./models.html#tool-calling-optimized)
 
 Models can also be referenced as plain strings (e.g. `"gemma3:4b"`, `"llama3.2:3b"`).
 

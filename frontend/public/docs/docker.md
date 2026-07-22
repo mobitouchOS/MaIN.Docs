@@ -2,9 +2,14 @@
 
 MaIN.NET ships a ready-to-run Docker image called **InferPage** — a self-hosted web UI that lets you chat with any MaIN.NET-supported model without writing a line of code. Pull it, point it at a GPU (or don't), and you have a private AI inference endpoint in under a minute.
 
+> 🚀 **InferPage also exposes a fully OpenAI-compatible HTTP API** — any model can be used with the OpenAI Python/Node.js SDK. See the [InferPage OpenAI API Reference](./inferpage-api.html) for details.  
+> 📋 **See the [Supported Models](./models.html) catalog** — 100+ models available out of the box.
+
 ## What InferPage Is
 
 InferPage is a Blazor Server app that wires up MaIN.NET under the hood. It exposes a clean browser-based chat UI on **port 5555** and supports every backend the framework does — local GGUF models, Ollama, and all cloud providers.
+
+The OpenAI-compatible HTTP API is available at `http://localhost:5555/v1` and supports chat completions, tool calling (including OpenAI hosted tools like `web_search`), vision input, and streaming. See the [API reference](./inferpage-api.html) for the full specification.
 
 It is **genuinely multiplatform**:
 
