@@ -380,6 +380,42 @@ await AIHub.Chat()
     .CompleteAsync(interactive: true);
 ```
 
+### Function Calling with Local Models
+
+For local (Self backend) tool calling, use a model that has been fine-tuned for function calling. MaIN.NET automatically detects the model's native tool-call format and uses the correct prompt template and parser.
+
+**Best local models for tool calling (in order of recommendation):**
+
+1. **`Models.Local.Qwen3_5_4b`** — Qwen 3.5 4B (recommended) — newest model (2026), specifically designed for tool calling and agentic AI, trained on tool calling datasets, native tool support, 4B parameters (fast), 262K context, has thinking mode
+2. **`Models.Local.Granite4_1_3b`** — IBM Granite 4.1 3B — enterprise-grade, specifically fine-tuned for function calling, BFCL v3 score 60.80, trained on xLAM and glaive tool calling datasets
+3. **`Models.Local.Nemotron3Nano4b`** — NVIDIA Nemotron 3 Nano 4B — edge-optimized, hybrid Mamba-Transformer, trained on ToolBench and APIGen data
+4. **`Models.Local.Qwen2_5_7b`** — Qwen 2.5 7B Instruct — proven tool calling, larger model
+5. **`Models.Local.Llama3_2_1b`** — Llama 3.2 1B (smallest with tool support)
+6. **`Models.Local.Mistral7b`** — Mistral 7B Instruct v0.3 (function calling)
+
+**Supported native tool-call formats:**
+- Qwen2.5, Qwen3, Qwen3.5, Hermes: `<tool_call>{"tool_calls": [...]}</tool_call>`
+- IBM Granite: `<tool_call>{"name": "...", "arguments": {...}}</tool_call>`
+- Llama 3.1+: `<functioncall>{"name": "...", "arguments": ...}</functioncall>`
+- Mistral v0.3+: `[TOOL_CALLS][{"name": "...", "arguments": {...}}]`
+- Phi-3.5, Phi-4: `<|tool_call|>{...}<|/tool_call|>`
+
+```csharp
+// Recommended: Qwen 3.5 4B (best tool calling support)
+await AIHub.Chat()
+    .WithModel(Models.Local.Qwen3_5_4b)
+    .WithMessage("What's the weather in Paris?")
+    .WithTools(new ToolsConfigurationBuilder()
+        .AddTool(
+            name: "get_weather",
+            description: "Get the current weather for a location",
+            parameters: new { type = "object", properties = new { location = new { type = "string" } } },
+            execute: (string args) => Task.FromResult<object>("{\"temp\": 15, \"condition\": \"cloudy\"}"))
+        .WithToolChoice("auto")
+        .Build())
+    .CompleteAsync(interactive: true);
+```
+
 ### Cancellation
 
 ```csharp

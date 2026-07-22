@@ -31,6 +31,7 @@ InferPage is genuinely multiplatform. The same repo produces four image tags tar
 | `MaIN__GeminiKey` | — | Gemini API key when using Gemini backend |
 | `MaIN__OpenAiKey` | — | OpenAI API key when using OpenAI backend |
 | `MaIN__AnthropicKey` | — | Anthropic API key when using Anthropic backend |
+| `MaIN__ApiKey` | — | Bearer token required by HTTP clients to call `/v1/*` endpoints. If unset, the API is open. |
 
 ## Quick start commands
 
@@ -253,6 +254,31 @@ curl http://localhost:5555/v1/chat/completions \
 ```
 
 A response with `"finish_reason": "tool_calls"` means the model wants to invoke a tool; run it locally and send the result back in a `role: "tool"` message to continue the conversation, the same pattern used against `api.openai.com`.
+
+#### OpenAI hosted tools (web search)
+
+InferPage also supports OpenAI's hosted tool format. Use `{"type": "web_search"}` (or the legacy `{"type": "web_search_preview"}`) to have InferPage execute the web search server-side and return results inline — no function definition needed, no tool execution on your side:
+
+```bash
+curl http://localhost:5555/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [{ "role": "user", "content": "What is the weather in Tokyo today?" }],
+    "tools": [{ "type": "web_search" }]
+  }'
+```
+
+The response contains the model's answer with search results baked into the `content` field. This matches OpenAI's behavior — drop-in compatible with any code that uses `web_search_preview` against `api.openai.com`.
+
+#### Best local models for tool calling
+
+When using InferPage with a local GGUF model (`:cpu` or `:cuda` tag), pick a model that has been fine-tuned for function calling. The top three recommendations:
+
+1. **`qwen3.5-4b`** — newest (2026), 4B parameters, 262K context, has thinking mode
+2. **`granite-4.1-3b`** — IBM enterprise-grade, BFCL v3 score 60.80
+3. **`nemotron-3-nano-4b`** — NVIDIA edge-optimized, hybrid Mamba-Transformer
+
+MaIN.NET automatically detects each model's native tool-call format (Hermes/Qwen2.5, IBM Granite, Llama 3.1+, Mistral v0.3+, Phi-3.5) and uses the correct prompt template and parser — no configuration needed.
 
 ### Using an official OpenAI SDK client
 

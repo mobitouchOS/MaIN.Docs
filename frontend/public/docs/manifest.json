@@ -16,9 +16,16 @@
       ]
     },
     {
+      "title": "Reference",
+      "entries": [
+        { "slug": "models",        "title": "Supported Models" }
+      ]
+    },
+    {
       "title": "Deployment",
       "entries": [
-        { "slug": "docker", "title": "Docker" }
+        { "slug": "docker", "title": "Docker" },
+        { "slug": "inferpage-api", "title": "InferPage OpenAI API" }
       ]
     }
   ]

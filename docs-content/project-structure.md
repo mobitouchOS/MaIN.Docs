@@ -298,30 +298,41 @@ new ToolsConfigurationBuilder()
 
 ```csharp
 // Local (llama.cpp / GGUF):
+Models.Local.Gemma3_4b
 Models.Local.Llama3_2_3b
-Models.Local.Llama3_2_1b
+Models.Local.Qwen3_5_4b          // RECOMMENDED for tool calling (newest, 262K context)
+Models.Local.Granite4_1_3b        // enterprise-grade tool calling
+Models.Local.Nemotron3Nano4b      // edge-optimized tool calling
+Models.Local.Qwen2_5_7b          // proven tool calling
 Models.Local.Mistral7b
-Models.Local.Phi3Mini
+Models.Local.Phi3_5_3b
 // ... many more
 
 // OpenAI:
+Models.OpenAi.Gpt5_6Sol            // frontier
+Models.OpenAi.Gpt5_6Terra          // balanced
+Models.OpenAi.Gpt5_6Luna           // cost-optimized
 Models.OpenAi.Gpt4o
 Models.OpenAi.Gpt4oMini
-Models.OpenAi.O1
+Models.OpenAi.O3
 Models.OpenAi.O3Mini
 
 // Gemini:
 Models.Gemini.Gemini3_5Flash
 Models.Gemini.Gemini3_1ProPreview
-Models.Gemini.Flash2_0
+Models.Gemini.Gemini2_5Pro
 
 // Anthropic:
-Models.Anthropic.Claude3_5Sonnet
-Models.Anthropic.Claude3_5Haiku
+Models.Anthropic.ClaudeFable5     // 5th-gen Mythos-level
+Models.Anthropic.ClaudeSonnet5
+Models.Anthropic.ClaudeOpus4_8
+Models.Anthropic.ClaudeHaiku4_5
 
 // Ollama — use string model name directly, e.g. "llama3.2"
 // DeepSeek, GroqCloud, xAI, Vertex — use their respective Models.* constants
 ```
+
+**See [models.md](models.md) for the complete model catalog with descriptions, sizes, and tool-calling support.**
 
 ---
 

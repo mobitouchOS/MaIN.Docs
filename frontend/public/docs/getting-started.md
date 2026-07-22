@@ -2,6 +2,9 @@
 
 MaIN.NET is an open-source .NET AI orchestration framework. Run models locally via LLamaSharp or connect to cloud providers — OpenAI, Anthropic, Gemini, GroqCloud, xAI, DeepSeek, Ollama, and Vertex.
 
+> 📋 **See the complete [Supported Models](./models.html) catalog** — 100+ models including GPT-5.6, Claude Fable 5, Qwen 3.5, Granite 4.1, and more.  
+> 🚀 **Or expose any model via OpenAI-compatible API** — see the [InferPage API docs](./inferpage-api.html).
+
 ## Installation
 
 ```bash
