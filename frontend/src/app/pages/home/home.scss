@@ -340,6 +340,7 @@ $agent-colors: (
       border-radius: var(--radius-lg) var(--radius-sm) var(--radius-lg) var(--radius-lg);
       align-items: flex-end;
       max-width: 82%;
+      flex: 0 1 auto;
     }
   }
 
