@@ -1192,6 +1192,7 @@ export class Home implements OnDestroy {
         `<tr>${row.split('|').map((c: string) => `<td>${c.trim()}</td>`).join('')}</tr>`)
       .replace(/^- (.+)$/gm, '<li>$1</li>')
       .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>')
       .trim();
   }
 }
