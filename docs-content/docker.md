@@ -15,6 +15,7 @@ InferPage is genuinely multiplatform. The same repo produces four image tags tar
 
 - **Port**: `5555` (set via `ASPNETCORE_URLS=http://+:5555`)
 - **Models volume**: `/app/Models` — mount a host directory here to persist GGUF models across restarts
+- **Data volume**: `/app/Data` — where saved **agents** and their chat history persist. Mount this (or agents vanish when the container is removed). See the Agents section below.
 - **Data Protection volume**: `/app/DataProtection-Keys`
 - **Default backend**: `Self` (local LLamaSharp inference). Override with `MaIN__BackendType` env var.
 
@@ -32,6 +33,9 @@ InferPage is genuinely multiplatform. The same repo produces four image tags tar
 | `MaIN__OpenAiKey` | — | OpenAI API key when using OpenAI backend |
 | `MaIN__AnthropicKey` | — | Anthropic API key when using Anthropic backend |
 | `MaIN__ApiKey` | — | Bearer token required by HTTP clients to call `/v1/*` endpoints. If unset, the API is open. |
+| `MaIN__FileSystemSettings__Path` | `/app/Data` | Where saved agents and chat history persist — mount this path as a volume to keep them across restarts |
+| `MaIN__AllowMcpConfiguration` | `false` | Allow agents to launch MCP servers. Off by default — an MCP server runs an **arbitrary command on the host, unsandboxed**; enable only for servers you trust |
+| `MaIN__SearxngBaseUrl` | `http://127.0.0.1:8080` (`:cpu`/`:cuda`) | SearXNG endpoint backing the agent `web_search` tool. Bundled and auto-started in the `:cpu`/`:cuda` images; set to an external instance for the `:ollama*` images |
 
 ## Quick start commands
 
@@ -152,6 +156,40 @@ services:
 
 Once the container is running, open `http://localhost:5555` in any browser. On first launch with a fresh models volume, InferPage will prompt you to pick and download a model. Subsequent starts load from the cache immediately.
 
+## Agents
+
+Beyond one-off chat, InferPage lets you define reusable **agents** — a saved configuration of `{ name, model, system prompt, built-in tools, optional MCP server }`. Create and edit them in the browser UI (the **Agents** panel). Each agent is persisted as JSON under `/app/Data`, so an agent configured once is available on every later container start — including through the HTTP API (see "Calling a configured agent" below).
+
+**Persistence is volume-backed.** Agents and their chat history live in `/app/Data`, pointed at by `MaIN__FileSystemSettings__Path=/app/Data` (set automatically in every image tag). Mount a host directory or named volume there, or agents are lost when the container is removed:
+
+```bash
+docker run -d \
+  -p 5555:5555 \
+  -v ~/models:/app/Models \
+  -v ~/inferpage-data:/app/Data \
+  ghcr.io/mobitouchos/main-inferpage:cpu
+```
+
+### Built-in (server-side) tools
+
+An agent can be given **built-in tools that InferPage executes itself**. This is the key difference from the raw `/v1/chat/completions` tool-calling path (which returns `tool_calls` for *your* code to run and hand back): with an agent, the tool runs **inside the container** and the agent returns the finished answer directly. Available built-in tools:
+
+| Tool | Does |
+|---|---|
+| `web_search` | Web search (needs SearXNG — bundled in `:cpu`/`:cuda`, see below) |
+| `fetch_web_page` | Fetch and read a URL's content |
+| `extract_url_metadata` | Pull title / description / OpenGraph metadata from a URL |
+| `rss_feed_reader` | Read an RSS / Atom feed |
+| `http_request` | Make an arbitrary HTTP request |
+| `get_current_datetime` | Current date / time |
+| `calculator` | Arithmetic evaluation |
+
+`web_search` uses SearXNG, which is **bundled and started automatically inside the `:cpu` and `:cuda` images** (`MaIN__SearxngBaseUrl=http://127.0.0.1:8080`). The `:ollama` / `:ollama-bundled` images do not include SearXNG — point `MaIN__SearxngBaseUrl` at an external instance to use `web_search` there.
+
+### MCP servers (opt-in, security-sensitive)
+
+An agent can also launch a **Model Context Protocol (MCP) server** to expose external tools. This is **off by default** and must be explicitly enabled with `MaIN__AllowMcpConfiguration=true`, because an MCP server runs an **arbitrary command on the host with no sandboxing**. `node` / `npx` are bundled in every image, so npm-distributed servers (e.g. `npx -y @modelcontextprotocol/server-filesystem`) work out of the box. MCP tool-calling only works on **cloud / OpenAI-compatible backends** (OpenAI, Gemini, Vertex, Anthropic, GroqCloud, xAI) — not on `Self`, `Ollama`, or `DeepSeek`.
+
 ## Using InferPage as an OpenAI-Compatible API
 
 Every InferPage container also serves an **OpenAI-compatible HTTP API** alongside the chat UI, on the same port (`5555`). This means any existing OpenAI SDK, library, or tool (the official `openai` Python/Node/`.NET` clients, LangChain, LlamaIndex, curl scripts written against `api.openai.com`, etc.) can point at your InferPage container instead and just work — no code changes beyond swapping the base URL.
@@ -166,6 +204,21 @@ This works identically no matter which backend InferPage is configured for (`MaI
 | `POST` | `/v1/chat/completions` | OpenAI-compatible chat completions — supports streaming, tool calling, and `response_format` |
 | `GET` | `/openapi/v1.json` | Machine-readable OpenAPI 3.1 document for the API above |
 | `GET` | `/scalar/v1` | Interactive API explorer (Scalar) — browse the schema and fire test requests from a browser, no client code needed |
+
+### Calling a configured agent
+
+Agents (see the Agents section above) are reachable through the same OpenAI-compatible API. They appear in `/v1/models` with `owned_by: "main-inferpage-agent"`, and are addressed by setting the `model` field to `agent:<agent-id>`:
+
+```bash
+curl http://localhost:5555/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "agent:3f2a9c14-...",
+    "messages": [{ "role": "user", "content": "Summarize the latest .NET release notes." }]
+  }'
+```
+
+The agent applies its **own** configured system prompt and tools (built-in and/or MCP), runs them server-side, and returns the finished answer — request-level `tools` are not the mechanism here, the agent's saved configuration is. The `agent:` prefix is case-insensitive. Streaming requests (`stream: true`) are accepted and return the agent's answer as a single SSE chunk followed by `data: [DONE]`. Agent addressing also works on the `/v1/responses` endpoint.
 
 ### Authentication (optional)
 
